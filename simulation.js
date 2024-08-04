@@ -43,10 +43,12 @@ class Rectangle {
     this.color = color;
   }
   display() {
+    push();
     rectMode(CENTER);
     fill(this.color);
     noStroke();
     rect(this.x, this.y, this.w, this.h);
+    pop();
   }
 }
 
@@ -67,9 +69,34 @@ class Dropper {
     }
   }
 }
+class Flask {
+  constructor(img, x, y, w, h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.img = img;
+    this.shakingRotation = 0;
+    this.shakingRotationSpeed = 1;
+  }
 
+  display() {
+    image(this.img, this.x, this.y, this.w, this.h);
+  }
+
+  shake() {
+    let shakingRotationOffset = sin(this.shakingRotation) * 2.8;
+    push();
+    translate(this.x + this.w / 2, this.y + this.h / 2);
+    rotate(radians(shakingRotationOffset));
+    image(this.img, -this.w / 2, -this.h / 2, this.w, this.h);
+    pop();
+    this.shakingRotation += this.shakingRotationSpeed;
+  }
+}
 // CLASS CREATED IMAGE VARIABLES
-let bureteFilling, dropper1, dropper2;
+let bureteFilling, dropper1, dropper2, flask1, flask2, flask3;
+let flaskTouched = false;
 
 function setup() {
   // Creating Canvas for the magic
@@ -136,34 +163,37 @@ function setup() {
     -liquidLevel * 0.922,
     color(100, 100, 100, 100)
   );
-
+  flask1 = new Flask(frontFlask, frontFlaskX, frontFlaskY, frontFlaskW, frontFlaskH)
+  flask2 = new Flask(frontFlask, ff2X, ff2Y, ff2W, ff2H)
+  flask3 = new Flask(frontFlask, ff3X, ff3Y, ff3W, ff3H)
   dropper1 = new Dropper(dX, dY, dW, dH, dropper, dX * 1.05, dY * 1.14, dW * 0.15, dH * 0.6, color(0, 255, 0, 100));
-  dropper2 = new Dropper(d2X, d2Y, d2W, d2H, dropper, d2X * 1.039, d2Y * 1.13, d2W * 0.12, d2H * 0.6, color(0, 255, 0, 100));
+  dropper2 = new Dropper(d2X, d2Y, d2W, d2H, dropper, d2X * 1.039, d2Y * 1.13, d2W * 0.12, d2H * 0.6, color(255, 0, 0, 100));
 }
-let c
+
 function draw() {
   background(bg);
   frameRate(30);
   image(burete, bureteX, bureteY, bureteW, bureteH);
-  // image(backFlask, frontFlaskX, frontFlaskY, frontFlaskW, frontFlaskH);
-  image(frontFlask, frontFlaskX, frontFlaskY, frontFlaskW, frontFlaskH);
-  image(frontFlask, ff2X, ff2Y, ff2W, ff2H);
-  image(frontFlask, ff3X, ff3Y, ff3W, ff3H);
+
+  if (flaskTouched)
+    flask1.shake();
+  else
+    flask1.display();
+
+  flask2.display();
+  flask3.display();
 
   bureteFilling.display();
   dropper1.display();
   dropper2.display();
-
-  // Getting a portion of the image
-  c= water.get(0,0,water.width/0.8,water.height/0.2);
-
-  // Ensure the portion is captured
-  if (c.width > 0 && c.height > 0) {
-    image(c, 300, 200, 200, 200);
-    console.log('ghd')
-  }
-  // Display the full water image and a rectangle for reference
-  // image(water, 200, 200, 200, 200);
-  fill(255, 0, 0);
-  rect(200, 200, 10, 10);
 }
+
+function mousePressed() {
+  let flask_dist = dist(mouseX, mouseY, frontFlaskX + frontFlaskW / 2, frontFlaskY + frontFlaskH / 2);
+  if (flask_dist <= frontFlaskW / 2 || flask_dist <= frontFlaskH / 1.2)
+    flaskTouched = !flaskTouched;
+
+  else
+    flaskTouched = false; // Stop shaking if any other area is clicked
+}
+
