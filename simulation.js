@@ -1,6 +1,5 @@
-// image variables
+// Image variables
 let backFlask, bg, burete, dropper, frontFlask, halfWater, water;
-// Extra adjustments variables
 let buretteLiquidColor;
 
 // Loading the required images material
@@ -44,7 +43,8 @@ class Rectangle {
   }
   display() {
     push();
-    rectMode(CENTER);
+    // rectMode(CENTER);
+
     fill(this.color);
     noStroke();
     rect(this.x, this.y, this.w, this.h);
@@ -84,6 +84,7 @@ class Flask {
     image(this.img, this.x, this.y, this.w, this.h);
   }
 
+  // function for adding shaking effect on my flask in p5JS
   shake() {
     let shakingRotationOffset = sin(this.shakingRotation) * 2.8;
     push();
@@ -94,9 +95,20 @@ class Flask {
     this.shakingRotation += this.shakingRotationSpeed;
   }
 }
+
 // CLASS CREATED IMAGE VARIABLES
 let bureteFilling, dropper1, dropper2, flask1, flask2, flask3;
 let flaskTouched = false;
+let bureteTouched = false;
+
+let buretesize = 5; //For making the effect of changing the size of burette on touching
+
+// Sliders as variables
+let slider2 = { value: () => 5, attribute: () => { } };
+let slider3 = { value: () => 5, attribute: () => { } };
+
+let normality_titrate, volume_titrate, normality_titrant, volume_titrant;
+let liquidDropInterval = 100, change = 0.1, cropHeight = 0, aftercolour = 255
 
 function setup() {
   // Creating Canvas for the magic
@@ -138,13 +150,13 @@ function setup() {
   ff2W = 60 * scaleFactor;
   ff2H = 80 * scaleFactor;
 
-  // DROPPER POSSITION RELATIVE TO FLASK 2
+  // DROPPER POSITION RELATIVE TO FLASK 2
   dX = ff2X + 12 * scaleFactor;
   dY = ff2Y - 100 * scaleFactor;
   dW = 40 * scaleFactor;
   dH = 90 * scaleFactor;
 
-  //FLASK 3 POSITION RELATIVE TO FLASK 2
+  // FLASK 3 POSITION RELATIVE TO FLASK 2
   ff3X = ff2X + ff2W + 60 * scaleFactor; // Adjust spacing as needed
   ff3Y = ff2Y + ff2H / 2;
   ff3W = ff2W;
@@ -157,15 +169,13 @@ function setup() {
   d2H = 90 * scaleFactor;
 
   bureteFilling = new Rectangle(
-    width / 2 - 5.5 * size,
-    8.51 * size,
-    size * 0.52,
-    -liquidLevel * 0.922,
+    width / 2 - 5.5 * size, 8.51 * size,
+    size * 0.52, -liquidLevel * 0.922,
     color(100, 100, 100, 100)
   );
-  flask1 = new Flask(frontFlask, frontFlaskX, frontFlaskY, frontFlaskW, frontFlaskH)
-  flask2 = new Flask(frontFlask, ff2X, ff2Y, ff2W, ff2H)
-  flask3 = new Flask(frontFlask, ff3X, ff3Y, ff3W, ff3H)
+  flask1 = new Flask(frontFlask, frontFlaskX, frontFlaskY, frontFlaskW, frontFlaskH);
+  flask2 = new Flask(frontFlask, ff2X, ff2Y, ff2W, ff2H);
+  flask3 = new Flask(frontFlask, ff3X, ff3Y, ff3W, ff3H);
   dropper1 = new Dropper(dX, dY, dW, dH, dropper, dX * 1.05, dY * 1.14, dW * 0.15, dH * 0.6, color(0, 255, 0, 100));
   dropper2 = new Dropper(d2X, d2Y, d2W, d2H, dropper, d2X * 1.039, d2Y * 1.13, d2W * 0.12, d2H * 0.6, color(255, 0, 0, 100));
 }
@@ -175,25 +185,85 @@ function draw() {
   frameRate(30);
   image(burete, bureteX, bureteY, bureteW, bureteH);
 
-  if (flaskTouched)
-    flask1.shake();
-  else
-    flask1.display();
+  if (flaskTouched) flask1.shake();
+  else flask1.display();
 
   flask2.display();
   flask3.display();
 
-  bureteFilling.display();
+  // bureteFilling.display();
   dropper1.display();
   dropper2.display();
+
+  // Display the liquid stream coming out of burette nozzle
+  if (liquidLevel >= 1 && bureteTouched == true) {
+    noStroke();
+    fill(buretteLiquidColor);
+    rect(
+      // width / 2 + 0.95 * size,
+      frontFlaskX+frontFlaskW/2 -1.4 *scaleFactor,
+      frontFlaskY- frontFlaskH/1.6,
+      change * size * 0.8 * random(2, 2.2),
+      random(6.5,6.6) * size
+    );
+  }
+
+  // Creating the liquid inside the burette
+  push();
+  noStroke();
+  fill(100, 100, 100, 100);
+  rect(width / 2 - 5.7 * size, 12.2 * size, size * 0.52, -liquidLevel * 0.93 );
+  pop();
+ 
+  // Adding water in the flask effect
+  push();
+  tint(aftercolour);
+  if (cropHeight < frontFlaskH) {
+    let c = water.get(0, frontFlaskH - cropHeight, frontFlaskW, frontFlaskH);
+    image(c, frontFlaskX, frontFlaskY + frontFlaskH - cropHeight);
+  } else {
+    // If cropHeight exceeds frontFlaskH, draw the entire image without cropping
+    image(water, frontFlaskX, frontFlaskY + frontFlaskH - cropHeight);
+  }
+  pop();
 }
 
 function mousePressed() {
   let flask_dist = dist(mouseX, mouseY, frontFlaskX + frontFlaskW / 2, frontFlaskY + frontFlaskH / 2);
-  if (flask_dist <= frontFlaskW / 2 || flask_dist <= frontFlaskH / 1.2)
+  if (flask_dist <= frontFlaskW / 2 || flask_dist <= frontFlaskH / 1.2) {
     flaskTouched = !flaskTouched;
-
-  else
+  } else {
     flaskTouched = false; // Stop shaking if any other area is clicked
+  }
+
+  let buretetouchX = (bureteX+bureteW)/ 2, buretetouchY = (bureteY+ bureteH)/2;
+  let dis_burete = dist(mouseX, mouseY, buretetouchX, buretetouchY);
+  if (dis_burete <= 130 && dis_burete>=85) {
+    start();
+
+  }else console.log(`dist: ${dis_burete}`)
+}
+
+function start() {
+  // Will require later for mathematical calculations
+  // normality_titrate = slider2.value() / 2;
+  // volume_titrate = slider3.value();
+
+  // buretesize = buretesize + 0.1;
+  // normality_titrant = random(0.8, 0.9);
+  // volume_titrant = (normality_titrant * volume_titrate) / normality_titrate;
+  bureteTouched = !bureteTouched;
+
+  setInterval(addLiquidDrop, liquidDropInterval);
+  slider2.attribute("disabled", true);
+  slider3.attribute("disabled", true);
+}
+
+// This function keeps track of all the increment in flask as well as decrease in burette
+function addLiquidDrop() {
+  if (liquidLevel >= 1 && bureteTouched) {
+    liquidLevel -= (change * size) / 2;
+    cropHeight += 2.0 * change;
+  }
 }
 
