@@ -108,7 +108,7 @@ let slider2 = { value: () => 5, attribute: () => { } };
 let slider3 = { value: () => 5, attribute: () => { } };
 
 let normality_titrate, volume_titrate, normality_titrant, volume_titrant;
-let liquidDropInterval = 100, change = 0.1, cropHeight = 0, aftercolour = 255
+let liquidDropInterval = 100, change = 0.1, cropHeight = 20, aftercolour = 255
 
 function setup() {
   // Creating Canvas for the magic
@@ -143,7 +143,7 @@ function setup() {
   frontFlaskY = bureteY * 5 + 10;
   frontFlaskW = bureteW * 0.4;
   frontFlaskH = bureteH * 0.2;
-
+  console.log(frontFlaskW)
   // FLASK 2 POSITION RELATIVE TO BURETE
   ff2X = bureteX + bureteW * 1.8 - 50; // Adjust as needed
   ff2Y = bureteY + bureteH - 150; // Adjust as needed
@@ -176,8 +176,8 @@ function setup() {
   flask1 = new Flask(frontFlask, frontFlaskX, frontFlaskY, frontFlaskW, frontFlaskH);
   flask2 = new Flask(frontFlask, ff2X, ff2Y, ff2W, ff2H);
   flask3 = new Flask(frontFlask, ff3X, ff3Y, ff3W, ff3H);
-  dropper1 = new Dropper(dX, dY, dW, dH, dropper, dX * 1.05, dY * 1.14, dW * 0.15, dH * 0.6, color(0, 255, 0, 100));
-  dropper2 = new Dropper(d2X, d2Y, d2W, d2H, dropper, d2X * 1.039, d2Y * 1.13, d2W * 0.12, d2H * 0.6, color(255, 0, 0, 100));
+  dropper1 = new Dropper(dX, dY, dW, dH, dropper, dX * 1.04, dY * 1.08, dW * 0.15, dH * 0.6, color(0, 255, 0, 100));
+  dropper2 = new Dropper(d2X, d2Y, d2W, d2H, dropper, d2X * 1.034, d2Y * 1.06, d2W * 0.12, d2H * 0.6, color(255, 0, 0, 100));
 }
 
 function draw() {
@@ -201,10 +201,10 @@ function draw() {
     fill(buretteLiquidColor);
     rect(
       // width / 2 + 0.95 * size,
-      frontFlaskX+frontFlaskW/2 -1.4 *scaleFactor,
-      frontFlaskY- frontFlaskH/1.6,
-      change * size * 0.8 * random(2, 2.2),
-      random(6.5,6.6) * size
+      frontFlaskX + frontFlaskW / 2 - 1.4 * scaleFactor,
+      frontFlaskY - frontFlaskH / 1.6,
+      change * size * 0.6 * random(2, 2.2),
+      random(6.5, 6.6) * size
     );
   }
 
@@ -212,18 +212,25 @@ function draw() {
   push();
   noStroke();
   fill(100, 100, 100, 100);
-  rect(width / 2 - 5.7 * size, 12.2 * size, size * 0.52, -liquidLevel * 0.93 );
+  rect(width / 2 - 5.7 * size, 12.2 * size, size * 0.52, -liquidLevel * 0.93);
   pop();
- 
+
+  water.resize(frontFlaskW, frontFlaskH)
   // Adding water in the flask effect
   push();
-  tint(aftercolour);
+  tint(0, 0, 255);
   if (cropHeight < frontFlaskH) {
-    let c = water.get(0, frontFlaskH - cropHeight, frontFlaskW, frontFlaskH);
-    image(c, frontFlaskX, frontFlaskY + frontFlaskH - cropHeight);
+    let c = water.get(
+      0,
+      water.height-cropHeight,  // Adjust y-coordinate based on cropHeight
+      frontFlaskW,
+      cropHeight               // Adjust height based on cropHeight
+    );
+    // console.log(water.height, frontFlaskH, water.height-frontFlaskH)
+    // image(c, 300, 300);
   } else {
     // If cropHeight exceeds frontFlaskH, draw the entire image without cropping
-    image(water, frontFlaskX, frontFlaskY + frontFlaskH - cropHeight);
+    image(water, 300,400);
   }
   pop();
 }
@@ -236,12 +243,12 @@ function mousePressed() {
     flaskTouched = false; // Stop shaking if any other area is clicked
   }
 
-  let buretetouchX = (bureteX+bureteW)/ 2, buretetouchY = (bureteY+ bureteH)/2;
+  let buretetouchX = (bureteX + bureteW) / 2, buretetouchY = (bureteY + bureteH) / 2;
   let dis_burete = dist(mouseX, mouseY, buretetouchX, buretetouchY);
-  if (dis_burete <= 130 && dis_burete>=85) {
+  if (dis_burete <= 130 && dis_burete >= 85) {
     start();
 
-  }else console.log(`dist: ${dis_burete}`)
+  } else console.log(`dist: ${dis_burete}`)
 }
 
 function start() {
