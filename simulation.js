@@ -149,6 +149,34 @@ class Animation {
   }
 }
 
+class Drop {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.speed = 3;
+    this.radius = 2.5;
+    this.active = true;
+  }
+
+  update() {
+    if (this.active) {
+      this.y += this.speed;
+
+      // Check if the drop has reached the specified y-coordinate
+      if (this.y > 460) {
+        this.active = false; // Set drop as inactive
+      }
+    }
+  }
+
+  display() {
+    if (this.active) {
+      noStroke();
+      fill(255, 255, 0, 200);
+      ellipse(this.x, this.y, this.radius * 2, this.radius * 2 + 2);
+    }
+  }
+}
 
 // CLASS CREATED IMAGE VARIABLES
 let bureteFilling, dropper1, dropper2, flask1, flask2, flask3;
@@ -163,7 +191,7 @@ let slider3 = { value: () => 5, attribute: () => { } };
 
 let normality_titrate, volume_titrate, normality_titrant, volume_titrant;
 let liquidDropInterval = 100, change = 0.1, cropHeight = 20, aftercolour = 255
-
+let drops=[]
 function setup() {
   // Creating Canvas for the magic
   const container = select("#simulator");
@@ -239,6 +267,7 @@ function setup() {
 }
 
 let animRunning = false; // To track if an animation is currently running
+let phase = 1; // 0 = Initial state, 1 = First animation, 2 = Second animation, 3 = Third animation
 
 function draw() {
   background(bg);
@@ -254,23 +283,43 @@ function draw() {
   // dropper1.anim(createVector(dX, dY), createVector(dX, dY + 50), 20)
 
   // bureteFilling.display();
-  let hello = true;
 
   dropper1.display();
   dropper1.update()
 
-  if (mouseIsPressed && !animRunning) {
+  if (phase == 1 && mouseIsPressed && !animRunning) {
     dropper1.anim(createVector(dX, dY), createVector(dX, dY + 50), 20);
     animRunning = true;
   }
 
   // Start the second animation after the first one finishes
-  if (animRunning && dropper1.isFinished()) {
+  if (phase == 1 && animRunning && dropper1.isFinished()) {
     dropper1.anim(createVector(dX, dY + 50), createVector(dX, dY), 20);
     animRunning = false; // Reset after the second animation starts
+    phase = 2; // Move to the second animation phase
   }
 
+  if (phase === 2 && !animRunning && mouseIsPressed) {
+    dropper1.anim(createVector(dX, dY), createVector(dX - 195, dY + 70), 50);
+    animRunning = true;
+  }
+  // if (phase === 2 && animRunning && dropper1.isFinished()) {
+  //   dropper1.anim(createVector(dX - 190, dY + 10), createVector(dX, dY), 50);
+  //   animRunning = false;
+  // }
 
+  for (let i = drops.length - 1; i >= 0; i--) {
+    drops[i].update();
+    drops[i].display();
+
+    // Remove the drop if it's no longer active (if it has fallen past a certain point)
+    if (!drops[i].active) {
+      drops.splice(i, 1);
+    }
+  }
+  
+  
+  
   // Display the liquid stream coming out of burette nozzle
   if (liquidLevel >= 1 && bureteTouched == true) {
     noStroke();
@@ -291,24 +340,24 @@ function draw() {
   rect(width / 2 - 5.7 * size, 12.2 * size, size * 0.52, -liquidLevel * 0.93);
   pop();
 
-  // water.resize(frontFlaskW, frontFlaskH)
-  // // Adding water in the flask effect
-  // push();
-  // tint(0, 0, 255);
-  // if (cropHeight < frontFlaskH) {
-  //   let c = water.get(
-  //     0,
-  //     water.height - cropHeight,  // Adjust y-coordinate based on cropHeight
-  //     frontFlaskW,
-  //     cropHeight               // Adjust height based on cropHeight
-  //   );
-  //   // console.log(water.height, frontFlaskH, water.height-frontFlaskH)
-  //   image(c, 300, 300);
-  // } else {
-  //   // If cropHeight exceeds frontFlaskH, draw the entire image without cropping
-  //   image(water, 300, 400);
-  // }
-  // pop();
+  water.resize(frontFlaskW, frontFlaskH)
+  // Adding water in the flask effect
+  push();
+  tint(0, 0, 255);
+  if (cropHeight < frontFlaskH) {
+    let c = water.get(
+      0,
+      water.height - cropHeight,  // Adjust y-coordinate based on cropHeight
+      frontFlaskW,
+      cropHeight               // Adjust height based on cropHeight
+    );
+    // console.log(water.height, frontFlaskH, water.height-frontFlaskH)
+    image(c, 300, 300);
+  } else {
+    // If cropHeight exceeds frontFlaskH, draw the entire image without cropping
+    image(water, 300, 400);
+  }
+  pop();
 }
 
 function mousePressed() {
@@ -325,6 +374,13 @@ function mousePressed() {
     start();
 
   } else console.log(`dist: ${dis_burete}`)
+
+
+
+  for (let i = 0; i < 4; i++) {
+    let drop = new Drop(455, 200 + i * 20);
+    drops.push(drop);
+  }
 }
 
 function start() {
