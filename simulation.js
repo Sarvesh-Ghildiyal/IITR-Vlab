@@ -96,6 +96,60 @@ class Flask {
   }
 }
 
+class Animation {
+  constructor(image, startPoint, scaledW, scaledH) {
+    this.image = image;
+    this.startPoint = startPoint.copy();
+    this.scaledW = scaledW;
+    this.scaledH = scaledH;
+    this.currentPoint = startPoint.copy(); // Set the initial position to startPoint
+    this.finished = true; // Default to true since no animation is active
+  }
+  // Always display the image at the current position
+  display() {
+    image(this.image, this.currentPoint.x, this.currentPoint.y, this.scaledW, this.scaledH);
+  }
+
+  // Method to start an animation
+  anim(startPoint, endPoint, steps) {
+    this.startPoint = startPoint.copy();
+    this.endPoint = endPoint.copy();
+    this.steps = steps;
+    this.currentPoint = startPoint.copy();
+    this.currentStep = 0;
+    this.finished = false;
+
+    // Calculate the step increments
+    this.stepX = (endPoint.x - startPoint.x) / steps;
+    this.stepY = (endPoint.y - startPoint.y) / steps;
+  }
+
+  // Private method to update the animation
+  #update() {
+    if (!this.finished) {
+      if (this.currentStep < this.steps) {
+        this.currentPoint.x += this.stepX;
+        this.currentPoint.y += this.stepY;
+        this.currentStep++;
+      } else {
+        this.finished = true; // Mark animation as finished
+      }
+    }
+  }
+
+  // Public update method to be called in draw loop
+  update() {
+    this.#update();
+  }
+
+
+  // Check if the animation is finished
+  isFinished() {
+    return this.finished;
+  }
+}
+
+
 // CLASS CREATED IMAGE VARIABLES
 let bureteFilling, dropper1, dropper2, flask1, flask2, flask3;
 let flaskTouched = false;
@@ -115,6 +169,7 @@ function setup() {
   const container = select("#simulator");
   createCanvas(container.width, container.height);
   buretteLiquidColor = color(255, 255, 255, 100); // hypo color
+
 
   // Maintaining my Scale factor
   scaleX = width / originalWidth;
@@ -174,11 +229,16 @@ function setup() {
     color(100, 100, 100, 100)
   );
   flask1 = new Flask(frontFlask, frontFlaskX, frontFlaskY, frontFlaskW, frontFlaskH);
+  console.log(frontFlaskX, frontFlaskY)
   flask2 = new Flask(frontFlask, ff2X, ff2Y, ff2W, ff2H);
   flask3 = new Flask(frontFlask, ff3X, ff3Y, ff3W, ff3H);
-  dropper1 = new Dropper(dX, dY, dW, dH, dropper, dX * 1.04, dY * 1.08, dW * 0.15, dH * 0.6, color(0, 255, 0, 100));
-  dropper2 = new Dropper(d2X, d2Y, d2W, d2H, dropper, d2X * 1.034, d2Y * 1.06, d2W * 0.12, d2H * 0.6, color(255, 0, 0, 100));
+  // dropper1 = new Dropper(dX, dY, dW, dH, dropper, dX * 1.04, dY * 1.08, dW * 0.15, dH * 0.6, color(0, 255, 0, 100));
+  // dropper2 = new Dropper(d2X, d2Y, d2W, d2H, dropper, d2X * 1.034, d2Y * 1.06, d2W * 0.12, d2H * 0.6, color(255, 0, 0, 100));
+  dropper1 = new Animation(dropper, createVector(dX, dY), dW, dH)
+  dropper2 = new Animation(dropper, createVector(d2X, d2Y), d2W, d2H)
 }
+
+let animRunning = false; // To track if an animation is currently running
 
 function draw() {
   background(bg);
@@ -190,10 +250,26 @@ function draw() {
 
   flask2.display();
   flask3.display();
+  // dropper2.anim(createVector(d2X, d2Y), createVector(d2X, d2Y + 50), 20)
+  // dropper1.anim(createVector(dX, dY), createVector(dX, dY + 50), 20)
 
   // bureteFilling.display();
+  let hello = true;
+
   dropper1.display();
-  dropper2.display();
+  dropper1.update()
+
+  if (mouseIsPressed && !animRunning) {
+    dropper1.anim(createVector(dX, dY), createVector(dX, dY + 50), 20);
+    animRunning = true;
+  }
+
+  // Start the second animation after the first one finishes
+  if (animRunning && dropper1.isFinished()) {
+    dropper1.anim(createVector(dX, dY + 50), createVector(dX, dY), 20);
+    animRunning = false; // Reset after the second animation starts
+  }
+
 
   // Display the liquid stream coming out of burette nozzle
   if (liquidLevel >= 1 && bureteTouched == true) {
@@ -211,28 +287,28 @@ function draw() {
   // Creating the liquid inside the burette
   push();
   noStroke();
-  fill(100, 100, 100, 100);
+  fill(255, 100, 100, 100);
   rect(width / 2 - 5.7 * size, 12.2 * size, size * 0.52, -liquidLevel * 0.93);
   pop();
 
-  water.resize(frontFlaskW, frontFlaskH)
-  // Adding water in the flask effect
-  push();
-  tint(0, 0, 255);
-  if (cropHeight < frontFlaskH) {
-    let c = water.get(
-      0,
-      water.height-cropHeight,  // Adjust y-coordinate based on cropHeight
-      frontFlaskW,
-      cropHeight               // Adjust height based on cropHeight
-    );
-    // console.log(water.height, frontFlaskH, water.height-frontFlaskH)
-    // image(c, 300, 300);
-  } else {
-    // If cropHeight exceeds frontFlaskH, draw the entire image without cropping
-    image(water, 300,400);
-  }
-  pop();
+  // water.resize(frontFlaskW, frontFlaskH)
+  // // Adding water in the flask effect
+  // push();
+  // tint(0, 0, 255);
+  // if (cropHeight < frontFlaskH) {
+  //   let c = water.get(
+  //     0,
+  //     water.height - cropHeight,  // Adjust y-coordinate based on cropHeight
+  //     frontFlaskW,
+  //     cropHeight               // Adjust height based on cropHeight
+  //   );
+  //   // console.log(water.height, frontFlaskH, water.height-frontFlaskH)
+  //   image(c, 300, 300);
+  // } else {
+  //   // If cropHeight exceeds frontFlaskH, draw the entire image without cropping
+  //   image(water, 300, 400);
+  // }
+  // pop();
 }
 
 function mousePressed() {
