@@ -150,9 +150,9 @@ class Animation {
 }
 
 class Drop {
-  constructor(x, y) {
+  constructor(x, yOffset) {
     this.x = x;
-    this.y = y;
+    this.y = dY + yOffset;
     this.speed = 3;
     this.radius = 2.5;
     this.active = true;
@@ -191,7 +191,8 @@ let slider3 = { value: () => 5, attribute: () => { } };
 
 let normality_titrate, volume_titrate, normality_titrant, volume_titrant;
 let liquidDropInterval = 100, change = 0.1, cropHeight = 20, aftercolour = 255
-let drops=[]
+let drops = []
+
 function setup() {
   // Creating Canvas for the magic
   const container = select("#simulator");
@@ -226,7 +227,7 @@ function setup() {
   frontFlaskY = bureteY * 5 + 10;
   frontFlaskW = bureteW * 0.4;
   frontFlaskH = bureteH * 0.2;
-  console.log(frontFlaskW)
+  // console.log(frontFlaskW)
   // FLASK 2 POSITION RELATIVE TO BURETE
   ff2X = bureteX + bureteW * 1.8 - 50; // Adjust as needed
   ff2Y = bureteY + bureteH - 150; // Adjust as needed
@@ -257,17 +258,33 @@ function setup() {
     color(100, 100, 100, 100)
   );
   flask1 = new Flask(frontFlask, frontFlaskX, frontFlaskY, frontFlaskW, frontFlaskH);
-  console.log(frontFlaskX, frontFlaskY)
+  // console.log(frontFlaskX, frontFlaskY)
   flask2 = new Flask(frontFlask, ff2X, ff2Y, ff2W, ff2H);
   flask3 = new Flask(frontFlask, ff3X, ff3Y, ff3W, ff3H);
   // dropper1 = new Dropper(dX, dY, dW, dH, dropper, dX * 1.04, dY * 1.08, dW * 0.15, dH * 0.6, color(0, 255, 0, 100));
   // dropper2 = new Dropper(d2X, d2Y, d2W, d2H, dropper, d2X * 1.034, d2Y * 1.06, d2W * 0.12, d2H * 0.6, color(255, 0, 0, 100));
   dropper1 = new Animation(dropper, createVector(dX, dY), dW, dH)
   dropper2 = new Animation(dropper, createVector(d2X, d2Y), d2W, d2H)
+
+  // Liquid display inside flask 2
+  // tint(150, 75, 0);
+  // imageMode(CORNER); // Ensure the image is drawn from the top-left corner
+  // image(water, ff2X, ff2Y, ff2W, ff2H)
+
+  // // Liquid display inside flask 3
+  // tint(255, 192, 203);
+  // imageMode(CORNER); // Ensure the image is drawn from the top-left corner
+  // image(water, ff3X, ff3Y, ff2W, ff2H)
+
+  // noTint();
 }
 
 let animRunning = false; // To track if an animation is currently running
 let phase = 1; // 0 = Initial state, 1 = First animation, 2 = Second animation, 3 = Third animation
+let showRect_dropper1 = false;
+let rectHeight = 10;
+let increase = true;
+
 
 function draw() {
   background(bg);
@@ -282,32 +299,44 @@ function draw() {
   // dropper2.anim(createVector(d2X, d2Y), createVector(d2X, d2Y + 50), 20)
   // dropper1.anim(createVector(dX, dY), createVector(dX, dY + 50), 20)
 
+  // Liquid display inside flask 2 and 3
+  // tint(150, 75, 0);
+  // imageMode(CORNER); // Ensure the image is drawn from the top-left corner
+  // image(water, ff2X, ff2Y, ff2W, ff2H)
+
+  // // Liquid display inside flask 3
+  // tint(255, 192, 203);
+  // imageMode(CORNER); // Ensure the image is drawn from the top-left corner
+  // image(water, ff3X, ff3Y, ff2W, ff2H)
+
+  // noTint();
+
   // bureteFilling.display();
 
   dropper1.display();
   dropper1.update()
 
-  if (phase == 1 && mouseIsPressed && !animRunning) {
-    dropper1.anim(createVector(dX, dY), createVector(dX, dY + 50), 20);
-    animRunning = true;
+  dropper2.display();
+  dropper2.update();
+
+
+  // Create liquid inside your dropper
+  if (showRect_dropper1) {
+    noStroke();
+    rect(dX + 15, dY + dH - 10, 4.9, -rectHeight);
+    fill(150, 75, 0, 100);
+
+    // Increment the rectangle's height3
+    if (rectHeight != 50 & increase == true) {
+      rectHeight += 2;
+    }
+    if (rectHeight != 0 & increase == false) {
+      rectHeight -= 2;
+    }
+
   }
 
-  // Start the second animation after the first one finishes
-  if (phase == 1 && animRunning && dropper1.isFinished()) {
-    dropper1.anim(createVector(dX, dY + 50), createVector(dX, dY), 20);
-    animRunning = false; // Reset after the second animation starts
-    phase = 2; // Move to the second animation phase
-  }
-
-  if (phase === 2 && !animRunning && mouseIsPressed) {
-    dropper1.anim(createVector(dX, dY), createVector(dX - 195, dY + 70), 50);
-    animRunning = true;
-  }
-  // if (phase === 2 && animRunning && dropper1.isFinished()) {
-  //   dropper1.anim(createVector(dX - 190, dY + 10), createVector(dX, dY), 50);
-  //   animRunning = false;
-  // }
-
+  // Creates drops in the canvas
   for (let i = drops.length - 1; i >= 0; i--) {
     drops[i].update();
     drops[i].display();
@@ -317,9 +346,7 @@ function draw() {
       drops.splice(i, 1);
     }
   }
-  
-  
-  
+
   // Display the liquid stream coming out of burette nozzle
   if (liquidLevel >= 1 && bureteTouched == true) {
     noStroke();
@@ -328,8 +355,10 @@ function draw() {
       // width / 2 + 0.95 * size,
       frontFlaskX + frontFlaskW / 2 - 1.4 * scaleFactor,
       frontFlaskY - frontFlaskH / 1.6,
-      change * size * 0.6 * random(2, 2.2),
-      random(6.5, 6.6) * size
+      // change * size * 0.6 * random(2, 2.2),
+      // random(6.5, 6.6) * size
+      change * size * 0.6 * 2,
+      6.55 * size
     );
   }
 
@@ -343,7 +372,7 @@ function draw() {
   water.resize(frontFlaskW, frontFlaskH)
   // Adding water in the flask effect
   push();
-  tint(0, 0, 255);
+  tint(74, 187, 231);
   if (cropHeight < frontFlaskH) {
     let c = water.get(
       0,
@@ -352,10 +381,10 @@ function draw() {
       cropHeight               // Adjust height based on cropHeight
     );
     // console.log(water.height, frontFlaskH, water.height-frontFlaskH)
-    image(c, 300, 300);
+    image(c, frontFlaskX, frontFlaskY+ (frontFlaskH - cropHeight));
   } else {
     // If cropHeight exceeds frontFlaskH, draw the entire image without cropping
-    image(water, 300, 400);
+    image(water, frontFlaskX, frontFlaskY);
   }
   pop();
 }
@@ -365,24 +394,67 @@ function mousePressed() {
   if (flask_dist <= frontFlaskW / 2 || flask_dist <= frontFlaskH / 1.2) {
     flaskTouched = !flaskTouched;
   } else {
-    flaskTouched = false; // Stop shaking if any other area is clicked
+    // flaskTouched = false; // Stop shaking if any other area is clicked
   }
 
-  let buretetouchX = (bureteX + bureteW) / 2, buretetouchY = (bureteY + bureteH) / 2;
-  let dis_burete = dist(mouseX, mouseY, buretetouchX, buretetouchY);
-  if (dis_burete <= 130 && dis_burete >= 85) {
+
+  // Check for process 1, dropper 1 movement
+
+  // Process 1 part 1, dropper goes down
+  let dropper1Dist = dist(mouseX, mouseY, dX, dY);
+  if (phase == 1 && dropper1Dist <= 28 && !animRunning) {
+    dropper1.anim(createVector(dX, dY), createVector(dX, dY + 50), 20);
+    animRunning = true;
+  }
+  // Process 1 part 2, dropper comes back up
+  if (phase == 1 && animRunning && dropper1.isFinished() && dropper1Dist >= 50 && dropper1Dist <= 70) {
+    dropper1.anim(createVector(dX, dY + 50), createVector(dX, dY), 20);
+
+    // Rectangle moving up
+    showRect_dropper1 = true;
+    animRunning = false; // Reset after the second animation starts
+    phase = 2; // Move to the second animation phase
+  }
+
+
+  // Check for process 2, dropper 1 moves above flask 1
+
+  // Process 1 part 3, dropper goes above flask
+  if (phase === 2 && !animRunning && dropper1Dist <= 25) {
+    dropper1.anim(createVector(dX, dY), createVector(dX - 195, dY + 70), 50);
+    animRunning = true;
+  }
+  // Process 1 part 4, drops come out of dropper
+  if (phase === 2 && animRunning && dropper1Dist >= 185 && dropper1Dist <= 200) {
+    // dropper1.anim(createVector(dX - 195, dY + 70), createVector(dX, dY), 50);
+    for (let i = 0; i < 4; i++) {
+      let drop = new Drop(dX - 180, i * 20 + 100);
+      drops.push(drop);
+    }
+    // animRunning = false;
+  }
+
+  // Process 1 part 5, dropper goes over flask to its initial pos
+  if (phase === 2 && animRunning && dropper1Dist >= 185 && dropper1Dist <= 200) {
+    dropper1.anim(createVector(dX - 195, dY + 70), createVector(dX, dY), 50);
+    increase = false;
+    animRunning = false;
+    phase = 3;
+  }
+
+  // Check for Process 2, Titration
+
+  // Process 2 part 1, you start the titration
+
+  // let buretetouchX = (bureteX + bureteW) / 2, buretetouchY = (bureteY + bureteH) / 2;
+  let dis_burete = dist(mouseX, mouseY, bureteX, bureteY);
+  if (!animRunning && dis_burete <= 335 && dis_burete >= 318) {
     start();
 
   } else console.log(`dist: ${dis_burete}`)
-
-
-
-  for (let i = 0; i < 4; i++) {
-    let drop = new Drop(455, 200 + i * 20);
-    drops.push(drop);
-  }
 }
 
+let intervalId = null;
 function start() {
   // Will require later for mathematical calculations
   // normality_titrate = slider2.value() / 2;
@@ -393,7 +465,20 @@ function start() {
   // volume_titrant = (normality_titrant * volume_titrate) / normality_titrate;
   bureteTouched = !bureteTouched;
 
-  setInterval(addLiquidDrop, liquidDropInterval);
+  // setInterval(addLiquidDrop, liquidDropInterval);
+  // Clear any existing interval to avoid multiple intervals running
+  if (intervalId !== null) {
+    clearInterval(intervalId);
+  }
+
+  // Start a new interval only if the burette is touched
+  if (bureteTouched) {
+    intervalId = setInterval(addLiquidDrop, liquidDropInterval);
+  } else {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+  
   slider2.attribute("disabled", true);
   slider3.attribute("disabled", true);
 }
@@ -404,5 +489,6 @@ function addLiquidDrop() {
     liquidLevel -= (change * size) / 2;
     cropHeight += 2.0 * change;
   }
+  
 }
 
