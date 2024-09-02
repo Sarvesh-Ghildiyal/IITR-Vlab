@@ -150,12 +150,13 @@ class Animation {
 }
 
 class Drop {
-  constructor(x, yOffset) {
+  constructor(x, yOffset, color) {
     this.x = x;
     this.y = dY + yOffset;
     this.speed = 3;
     this.radius = 2.5;
     this.active = true;
+    this.color = color;
   }
 
   update() {
@@ -172,7 +173,7 @@ class Drop {
   display() {
     if (this.active) {
       noStroke();
-      fill(150, 75, 0);
+      fill(this.color);
       ellipse(this.x, this.y, this.radius * 2, this.radius * 2 + 2);
     }
   }
@@ -304,16 +305,16 @@ function draw() {
   // dropper1.anim(createVector(dX, dY), createVector(dX, dY + 50), 20)
 
   // Liquid display inside flask 2 and 3
-  // tint(150, 75, 0);
-  // imageMode(CORNER); // Ensure the image is drawn from the top-left corner
-  // image(water, ff2X, ff2Y, ff2W, ff2H)
+  tint(150, 75, 0);
+  imageMode(CORNER); // Ensure the image is drawn from the top-left corner
+  image(water, ff2X, ff2Y, ff2W, ff2H)
 
-  // // Liquid display inside flask 3
-  // tint(255, 192, 203);
-  // imageMode(CORNER); // Ensure the image is drawn from the top-left corner
-  // image(water, ff3X, ff3Y, ff2W, ff2H)
+  // Liquid display inside flask 3
+  tint(255, 192, 203);
+  imageMode(CORNER); // Ensure the image is drawn from the top-left corner
+  image(water, ff3X, ff3Y, ff2W, ff2H)
 
-  // noTint();
+  noTint();
 
   // bureteFilling.display();
 
@@ -327,7 +328,7 @@ function draw() {
   // Create liquid inside your dropper
   if (showRect_dropper1) {
     noStroke();
-    rect(dropper1.currentPoint.x + 15, dropper1.currentPoint.y+ dH - 10, 4.9, -rectHeight);
+    rect(dropper1.currentPoint.x + 15, dropper1.currentPoint.y + dH - 10, 4.9, -rectHeight);
     fill(150, 75, 0, 100);
 
     // Increment the rectangle's height3
@@ -341,8 +342,8 @@ function draw() {
   // Create liquid inside your dropper
   if (showRect_dropper2) {
     noStroke();
-    rect(dropper2.currentPoint.x + 15, dropper2.currentPoint.y + dH - 10, 4.9, -rectHeight);
-    fill(150, 75, 0, 100);
+    rect(dropper2.currentPoint.x + 15, dropper2.currentPoint.y + dH - 10, 4.9, -rect2Height);
+    fill(255, 192, 203, 100);
 
     // Increment the rectangle's height3
     if (rect2Height != 50 & increase == true) {
@@ -356,6 +357,19 @@ function draw() {
 
   // Creates drops in the canvas
   if (showRect_dropper1) {
+    for (let i = drops.length - 1; i >= 0; i--) {
+      drops[i].update();
+      drops[i].display();
+
+      // Remove the drop if it's no longer active (if it has fallen past a certain point)
+      if (!drops[i].active) {
+        drops.splice(i, 1);
+      }
+    }
+  }
+
+  // Creates drops for Drooper 2
+  if (showRect_dropper2) {
     for (let i = drops.length - 1; i >= 0; i--) {
       drops[i].update();
       drops[i].display();
@@ -445,7 +459,7 @@ function mousePressed() {
   // Process 1, Step 4: Drops are released from dropper
   if (phase === 2 && animRunning && dropper1Dist >= 185 && dropper1Dist <= 200) {
     for (let i = 0; i < 4; i++) {
-      let drop = new Drop(dX - 180, i * 20 + 100);
+      let drop = new Drop(dX - 180, i * 20 + 100, color(150, 75, 0));
       drops.push(drop);
     }
   }
@@ -482,9 +496,10 @@ function mousePressed() {
     animRunning = true;
   }
 
-  // Process 3, Step 2: Dropper 2 returns to original position
+  // Process 3, Step 2: Dropper 2 moves up
   if (phase == 3 && animRunning && dropper2.isFinished() && dropper2Dist >= 50 && dropper2Dist <= 70) {
     dropper2.anim(createVector(d2X, d2Y + 50), createVector(d2X, d2Y), 20);
+    increase = !increase;
     showRect_dropper1 = false; // Hide Dropper 1 rectangle
     showRect_dropper2 = true;  // Show Dropper 2 rectangle
     animRunning = false; // Reset after animation completes
@@ -500,14 +515,14 @@ function mousePressed() {
   // Process 3, Step 4: Drops are released from dropper 2
   if (phase === 4 && animRunning && dropper1Dist >= 185 && dropper1Dist <= 200) {
     for (let i = 0; i < 4; i++) {
-      let drop = new Drop(dX - 180, i * 20 + 100);
+      let drop = new Drop(dX - 180, i * 20 + 100, color(255, 192, 203));
       drops.push(drop);
     }
   }
 
   // Process 3, Step 5: Dropper 2 returns to initial position
   if (phase === 4 && animRunning && dropper1Dist >= 185 && dropper1Dist <= 200) {
-    dropper2.anim(createVector(dX - 195, dY + 70), createVector(d2X, d2Y), 50);
+    dropper2.anim(createVector(dX - 195, dY + 70), createVector(d2X, d2Y), 60);
     increase = false;
     animRunning = false;
   }
