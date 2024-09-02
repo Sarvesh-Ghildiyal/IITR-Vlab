@@ -172,7 +172,7 @@ class Drop {
   display() {
     if (this.active) {
       noStroke();
-      fill(150, 75, 0);
+      fill(255, 255, 0, 200);
       ellipse(this.x, this.y, this.radius * 2, this.radius * 2 + 2);
     }
   }
@@ -277,16 +277,12 @@ function setup() {
   // image(water, ff3X, ff3Y, ff2W, ff2H)
 
   // noTint();
-
-  // console.log('hello', dropper1.currentPoint.y)
 }
 
 let animRunning = false; // To track if an animation is currently running
 let phase = 1; // 0 = Initial state, 1 = First animation, 2 = Second animation, 3 = Third animation
 let showRect_dropper1 = false;
-let showRect_dropper2 = false;
 let rectHeight = 10;
-let rect2Height = 10;
 let increase = true;
 
 
@@ -327,7 +323,7 @@ function draw() {
   // Create liquid inside your dropper
   if (showRect_dropper1) {
     noStroke();
-    rect(dropper1.currentPoint.x + 15, dropper1.currentPoint.y+ dH - 10, 4.9, -rectHeight);
+    rect(dX + 15, dY + dH - 10, 4.9, -rectHeight);
     fill(150, 75, 0, 100);
 
     // Increment the rectangle's height3
@@ -337,33 +333,17 @@ function draw() {
     if (rectHeight != 0 & increase == false) {
       rectHeight -= 2;
     }
-  }
-  // Create liquid inside your dropper
-  if (showRect_dropper2) {
-    noStroke();
-    rect(dropper2.currentPoint.x + 15, dropper2.currentPoint.y + dH - 10, 4.9, -rectHeight);
-    fill(150, 75, 0, 100);
 
-    // Increment the rectangle's height3
-    if (rect2Height != 50 & increase == true) {
-      rect2Height += 2;
-    }
-    if (rect2Height != 0 & increase == false) {
-      rect2Height -= 2;
-    }
   }
-
 
   // Creates drops in the canvas
-  if (showRect_dropper1) {
-    for (let i = drops.length - 1; i >= 0; i--) {
-      drops[i].update();
-      drops[i].display();
+  for (let i = drops.length - 1; i >= 0; i--) {
+    drops[i].update();
+    drops[i].display();
 
-      // Remove the drop if it's no longer active (if it has fallen past a certain point)
-      if (!drops[i].active) {
-        drops.splice(i, 1);
-      }
+    // Remove the drop if it's no longer active (if it has fallen past a certain point)
+    if (!drops[i].active) {
+      drops.splice(i, 1);
     }
   }
 
@@ -401,7 +381,7 @@ function draw() {
       cropHeight               // Adjust height based on cropHeight
     );
     // console.log(water.height, frontFlaskH, water.height-frontFlaskH)
-    image(c, frontFlaskX, frontFlaskY + (frontFlaskH - cropHeight));
+    image(c, frontFlaskX, frontFlaskY+ (frontFlaskH - cropHeight));
   } else {
     // If cropHeight exceeds frontFlaskH, draw the entire image without cropping
     image(water, frontFlaskX, frontFlaskY);
@@ -414,43 +394,47 @@ function mousePressed() {
   if (flask_dist <= frontFlaskW / 2 || flask_dist <= frontFlaskH / 1.2) {
     flaskTouched = !flaskTouched;
   } else {
-    // Reset flask interaction if clicking outside the flask
+    // flaskTouched = false; // Stop shaking if any other area is clicked
   }
 
-  // ============================================
-  // SECTION 1: PROCESS 1 - DROPPER 1 MOVEMENT
-  // ============================================
 
-  // Check if dropper 1 is activated (Process 1, Step 1: Dropper moves down)
+  // Check for process 1, dropper 1 movement
+
+  // Process 1 part 1, dropper goes down
   let dropper1Dist = dist(mouseX, mouseY, dX, dY);
   if (phase == 1 && dropper1Dist <= 28 && !animRunning) {
     dropper1.anim(createVector(dX, dY), createVector(dX, dY + 50), 20);
     animRunning = true;
   }
-
-  // Process 1, Step 2: Dropper returns to original position
+  // Process 1 part 2, dropper comes back up
   if (phase == 1 && animRunning && dropper1.isFinished() && dropper1Dist >= 50 && dropper1Dist <= 70) {
     dropper1.anim(createVector(dX, dY + 50), createVector(dX, dY), 20);
-    showRect_dropper1 = true; // Indicate rectangle movement
-    animRunning = false; // Reset after animation completes
-    phase = 2; // Proceed to next phase
+
+    // Rectangle moving up
+    showRect_dropper1 = true;
+    animRunning = false; // Reset after the second animation starts
+    phase = 2; // Move to the second animation phase
   }
 
-  // Process 1, Step 3: Dropper moves above the flask
+
+  // Check for process 2, dropper 1 moves above flask 1
+
+  // Process 1 part 3, dropper goes above flask
   if (phase === 2 && !animRunning && dropper1Dist <= 25) {
     dropper1.anim(createVector(dX, dY), createVector(dX - 195, dY + 70), 50);
     animRunning = true;
   }
-
-  // Process 1, Step 4: Drops are released from dropper
+  // Process 1 part 4, drops come out of dropper
   if (phase === 2 && animRunning && dropper1Dist >= 185 && dropper1Dist <= 200) {
+    // dropper1.anim(createVector(dX - 195, dY + 70), createVector(dX, dY), 50);
     for (let i = 0; i < 4; i++) {
       let drop = new Drop(dX - 180, i * 20 + 100);
       drops.push(drop);
     }
+    // animRunning = false;
   }
 
-  // Process 1, Step 5: Dropper returns to initial position
+  // Process 1 part 5, dropper goes over flask to its initial pos
   if (phase === 2 && animRunning && dropper1Dist >= 185 && dropper1Dist <= 200) {
     dropper1.anim(createVector(dX - 195, dY + 70), createVector(dX, dY), 50);
     increase = false;
@@ -458,59 +442,16 @@ function mousePressed() {
     phase = 3;
   }
 
-  // ============================================
-  // SECTION 2: PROCESS 2 - TITRATION
-  // ============================================
+  // Check for Process 2, Titration
 
-  // Process 2, Step 1: Initiate titration by interacting with burette
+  // Process 2 part 1, you start the titration
+
+  // let buretetouchX = (bureteX + bureteW) / 2, buretetouchY = (bureteY + bureteH) / 2;
   let dis_burete = dist(mouseX, mouseY, bureteX, bureteY);
   if (!animRunning && dis_burete <= 335 && dis_burete >= 318) {
     start();
-  } else {
-    // console.log(`dist: ${dis_burete}`);
-  }
 
-  // ============================================
-  // SECTION 3: PROCESS 3 - DROPPER 2 MOVEMENT
-  // ============================================
-
-  // Process 3, Step 1: Dropper 2 moves down
-  let dropper2Dist = dist(mouseX, mouseY, d2X, d2Y);
-  // console.log('2 dist:', dropper2Dist);
-  if (phase == 3 && dropper2Dist <= 28 && !animRunning) {
-    dropper2.anim(createVector(d2X, d2Y), createVector(d2X, d2Y + 50), 20);
-    animRunning = true;
-  }
-
-  // Process 3, Step 2: Dropper 2 returns to original position
-  if (phase == 3 && animRunning && dropper2.isFinished() && dropper2Dist >= 50 && dropper2Dist <= 70) {
-    dropper2.anim(createVector(d2X, d2Y + 50), createVector(d2X, d2Y), 20);
-    showRect_dropper1 = false; // Hide Dropper 1 rectangle
-    showRect_dropper2 = true;  // Show Dropper 2 rectangle
-    animRunning = false; // Reset after animation completes
-    phase = 4; // Proceed to next phase
-  }
-
-  // Process 3, Step 3: Dropper 2 moves above the flask
-  if (phase === 4 && !animRunning && dropper2Dist <= 25) {
-    dropper2.anim(createVector(d2X, d2Y), createVector(dX - 195, dY + 70), 50);
-    animRunning = true;
-  }
-
-  // Process 3, Step 4: Drops are released from dropper 2
-  if (phase === 4 && animRunning && dropper1Dist >= 185 && dropper1Dist <= 200) {
-    for (let i = 0; i < 4; i++) {
-      let drop = new Drop(dX - 180, i * 20 + 100);
-      drops.push(drop);
-    }
-  }
-
-  // Process 3, Step 5: Dropper 2 returns to initial position
-  if (phase === 4 && animRunning && dropper1Dist >= 185 && dropper1Dist <= 200) {
-    dropper2.anim(createVector(dX - 195, dY + 70), createVector(d2X, d2Y), 50);
-    increase = false;
-    animRunning = false;
-  }
+  } else console.log(`dist: ${dis_burete}`)
 }
 
 let intervalId = null;
@@ -537,7 +478,7 @@ function start() {
     clearInterval(intervalId);
     intervalId = null;
   }
-
+  
   slider2.attribute("disabled", true);
   slider3.attribute("disabled", true);
 }
@@ -548,6 +489,6 @@ function addLiquidDrop() {
     liquidLevel -= (change * size) / 2;
     cropHeight += 2.0 * change;
   }
-
+  
 }
 
