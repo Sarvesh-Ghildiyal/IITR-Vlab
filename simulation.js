@@ -289,7 +289,8 @@ let showRect_dropper2 = false;
 let rectHeight = 10;
 let rect2Height = 10;
 let increase = true;
-
+let drop_1_in_flask = false;
+let drop_2_in_flask= false;
 
 function draw() {
   background(bg);
@@ -407,6 +408,10 @@ function draw() {
   // Adding water in the flask effect
   push();
   tint(74, 187, 231);
+  if (drop_1_in_flask)
+    tint(180)
+  if(drop_2_in_flask)
+    tint(255,255,0)
   if (cropHeight < frontFlaskH) {
     let c = water.get(
       0,
@@ -462,6 +467,7 @@ function mousePressed() {
       let drop = new Drop(dX - 180, i * 20 + 100, color(150, 75, 0));
       drops.push(drop);
     }
+    drop_1_in_flask = true;
   }
 
   // Process 1, Step 5: Dropper returns to initial position
@@ -518,6 +524,7 @@ function mousePressed() {
       let drop = new Drop(dX - 180, i * 20 + 100, color(255, 192, 203));
       drops.push(drop);
     }
+    drop_2_in_flask = true;
   }
 
   // Process 3, Step 5: Dropper 2 returns to initial position
